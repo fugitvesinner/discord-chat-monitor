@@ -1,5 +1,3 @@
-import datetime
-import aiohttp
 import discord
 import asyncio
 import json
@@ -8,6 +6,7 @@ from utils.log import logger
 class ChatLogger(discord.Client):
     def __init__(self):
         intents = discord.Intents.default()
+        intents.message_content = True
         super().__init__(intents=intents)
         
         with open("config.json") as f:
@@ -22,10 +21,10 @@ class ChatLogger(discord.Client):
             if not message.guild or message.guild.id != self.data["server_id"] or message.author.bot:
                 return
             
-            em = discord.Embed(
+            em = discord.em(
                 description=message.content or "*No content*",
                 color=0xff0000,
-                timestamp=datetime.datetime.now(datetime.timezone.utc)
+                timestamp=discord.utils.utcnow()
             )
             em.add_field(name="Channel", value=message.channel.mention, inline=True)
             
@@ -37,19 +36,19 @@ class ChatLogger(discord.Client):
                     em.add_field(name="Attachments", value=attachments, inline=False)
             
             em.set_footer(text=f"ID: {message.author.id}")
-            av_url = message.author.avatar_url if message.author.avatar else message.author.default_avatar_url
             
-            async with aiohttp.ClientSession() as session:
-                webhook = discord.Webhook.from_url(self.data["webhook"], adapter=discord.AsyncWebhookAdapter(session))
-                await webhook.send(
-                    username=f"{message.author.name} | Deleted",
-                    avatar_url=av_url,
-                    embed=em
-                )
-                logger.info(f"Sent webhook")
+            avatar_url = message.author.display_avatar.url
+            
+            webhook = discord.Webhook.from_url(self.data["webhook"])
+            await webhook.send(
+                username=f"{message.author.display_name} | Deleted",
+                avatar_url=avatar_url,
+                embed=em
+            )
+            logger.info(f"Sent webhook for deleted message from {message.author}")
                 
         except Exception as e:
-            logger.error(f"Sending webhook: {e}")
+            logger.error(f"Error sending webhook: {e}")
             
     async def on_message_edit(self, before, after):
         try:
@@ -58,26 +57,26 @@ class ChatLogger(discord.Client):
             
             em = discord.Embed(
                 color=0xffff00,
-                timestamp=datetime.datetime.now(datetime.timezone.utc)
+                timestamp=discord.utils.utcnow()
             )
             em.add_field(name="Before", value=before.content or "*No content*", inline=False)
             em.add_field(name="After", value=after.content or "*No content*", inline=False)
             em.add_field(name="Channel", value=before.channel.mention, inline=True)
             
             em.set_footer(text=f"ID: {before.author.id}")
-            avatar_url = before.author.avatar_url if before.author.avatar else before.author.default_avatar_url
             
-            async with aiohttp.ClientSession() as session:
-                webhook = discord.Webhook.from_url(self.data["webhook"], adapter=discord.AsyncWebhookAdapter(session))
-                await webhook.send(
-                    username=f"{before.author.name} | Edited",
-                    avatar_url=avatar_url,
-                    embed=em
-                )
-                logger.info(f"Sent webhook")
+            avatar_url = before.author.display_avatar.url
+            
+            webhook = discord.Webhook.from_url(self.data["webhook"])
+            await webhook.send(
+                username=f"{before.author.display_name} | Edited",
+                avatar_url=avatar_url,
+                embed=em
+            )
+            logger.info(f"Sent webhook for edited message from {before.author}")
                 
         except Exception as e:
-            logger.error(f"Sending webhook: {e}")
+            logger.error(f"Error sending webhook: {e}")
 
 async def main():
     client = ChatLogger()
