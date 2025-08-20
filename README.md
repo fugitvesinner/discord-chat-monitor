@@ -14,7 +14,7 @@
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/your-username/discord-message-logger.git
+git clone https://github.com/fugitvesinner/discord-chat-monitor
 cd discord-message-logger 
 ```
 
