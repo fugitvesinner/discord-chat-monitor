@@ -21,7 +21,7 @@ class ChatLogger(discord.Client):
             if not message.guild or message.guild.id != self.data["server_id"] or message.author.bot:
                 return
             
-            em = discord.em(
+            em = discord.Embed(
                 description=message.content or "*No content*",
                 color=0xff0000,
                 timestamp=discord.utils.utcnow()
