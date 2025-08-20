@@ -22,21 +22,21 @@ class ChatLogger(discord.Client):
             if not message.guild or message.guild.id != self.data["server_id"] or message.author.bot:
                 return
             
-            embed = discord.Embed(
+            em = discord.Embed(
                 description=message.content or "*No content*",
                 color=0xff0000,
                 timestamp=datetime.datetime.now(datetime.timezone.utc)
             )
-            embed.add_field(name="Channel", value=message.channel.mention, inline=True)
+            em.add_field(name="Channel", value=message.channel.mention, inline=True)
             
             if message.attachments:
                 if len(message.attachments) == 1:
-                    embed.set_image(url=message.attachments[0].url)
+                    em.set_image(url=message.attachments[0].url)
                 else:
                     attachments = "\n".join([f"[{att.filename}]({att.url})" for att in message.attachments])
-                    embed.add_field(name="Attachments", value=attachments, inline=False)
+                    em.add_field(name="Attachments", value=attachments, inline=False)
             
-            embed.set_footer(text=f"ID: {message.author.id}")
+            em.set_footer(text=f"ID: {message.author.id}")
             av_url = message.author.avatar_url if message.author.avatar else message.author.default_avatar_url
             
             async with aiohttp.ClientSession() as session:
@@ -44,7 +44,7 @@ class ChatLogger(discord.Client):
                 await webhook.send(
                     username=f"{message.author.name} | Deleted",
                     avatar_url=av_url,
-                    embed=embed
+                    embed=em
                 )
                 logger.info(f"Sent webhook")
                 
@@ -56,15 +56,15 @@ class ChatLogger(discord.Client):
             if not before.guild or before.guild.id != self.data["server_id"] or before.author.bot or before.content == after.content:
                 return
             
-            embed = discord.Embed(
+            em = discord.Embed(
                 color=0xffff00,
                 timestamp=datetime.datetime.now(datetime.timezone.utc)
             )
-            embed.add_field(name="Before", value=before.content or "*No content*", inline=False)
-            embed.add_field(name="After", value=after.content or "*No content*", inline=False)
-            embed.add_field(name="Channel", value=before.channel.mention, inline=True)
+            em.add_field(name="Before", value=before.content or "*No content*", inline=False)
+            em.add_field(name="After", value=after.content or "*No content*", inline=False)
+            em.add_field(name="Channel", value=before.channel.mention, inline=True)
             
-            embed.set_footer(text=f"ID: {before.author.id}")
+            em.set_footer(text=f"ID: {before.author.id}")
             avatar_url = before.author.avatar_url if before.author.avatar else before.author.default_avatar_url
             
             async with aiohttp.ClientSession() as session:
@@ -72,7 +72,7 @@ class ChatLogger(discord.Client):
                 await webhook.send(
                     username=f"{before.author.name} | Edited",
                     avatar_url=avatar_url,
-                    embed=embed
+                    embed=em
                 )
                 logger.info(f"Sent webhook")
                 
