@@ -1,3 +1,5 @@
+import datetime
+import aiohttp
 import discord
 import asyncio
 import json
@@ -21,30 +23,31 @@ class ChatLogger(discord.Client):
             if not message.guild or message.guild.id != self.data["server_id"] or message.author.bot:
                 return
             
-            em = discord.Embed(
+            embed = discord.Embed(
                 description=message.content or "*No content*",
                 color=0xff0000,
                 timestamp=discord.utils.utcnow()
             )
-            em.add_field(name="Channel", value=message.channel.mention, inline=True)
+            embed.add_field(name="Channel", value=message.channel.mention, inline=True)
             
             if message.attachments:
                 if len(message.attachments) == 1:
-                    em.set_image(url=message.attachments[0].url)
+                    embed.set_image(url=message.attachments[0].url)
                 else:
                     attachments = "\n".join([f"[{att.filename}]({att.url})" for att in message.attachments])
-                    em.add_field(name="Attachments", value=attachments, inline=False)
+                    embed.add_field(name="Attachments", value=attachments, inline=False)
             
-            em.set_footer(text=f"ID: {message.author.id}")
+            embed.set_footer(text=f"ID: {message.author.id}")
             
             avatar_url = message.author.display_avatar.url
             
-            webhook = discord.Webhook.from_url(self.data["webhook"])
-            await webhook.send(
-                username=f"{message.author.display_name} | Deleted",
-                avatar_url=avatar_url,
-                embed=em
-            )
+            async with aiohttp.ClientSession() as session:
+                webhook = discord.Webhook.from_url(self.data["webhook"], session=session)
+                await webhook.send(
+                    username=f"{message.author.display_name} | Deleted",
+                    avatar_url=avatar_url,
+                    embed=embed
+                )
             logger.info(f"Sent webhook for deleted message from {message.author}")
                 
         except Exception as e:
@@ -55,24 +58,25 @@ class ChatLogger(discord.Client):
             if not before.guild or before.guild.id != self.data["server_id"] or before.author.bot or before.content == after.content:
                 return
             
-            em = discord.Embed(
+            embed = discord.Embed(
                 color=0xffff00,
                 timestamp=discord.utils.utcnow()
             )
-            em.add_field(name="Before", value=before.content or "*No content*", inline=False)
-            em.add_field(name="After", value=after.content or "*No content*", inline=False)
-            em.add_field(name="Channel", value=before.channel.mention, inline=True)
+            embed.add_field(name="Before", value=before.content or "*No content*", inline=False)
+            embed.add_field(name="After", value=after.content or "*No content*", inline=False)
+            embed.add_field(name="Channel", value=before.channel.mention, inline=True)
             
-            em.set_footer(text=f"ID: {before.author.id}")
+            embed.set_footer(text=f"ID: {before.author.id}")
             
             avatar_url = before.author.display_avatar.url
             
-            webhook = discord.Webhook.from_url(self.data["webhook"])
-            await webhook.send(
-                username=f"{before.author.display_name} | Edited",
-                avatar_url=avatar_url,
-                embed=em
-            )
+            async with aiohttp.ClientSession() as session:
+                webhook = discord.Webhook.from_url(self.data["webhook"], session=session)
+                await webhook.send(
+                    username=f"{before.author.display_name} | Edited",
+                    avatar_url=avatar_url,
+                    embed=embed
+                )
             logger.info(f"Sent webhook for edited message from {before.author}")
                 
         except Exception as e:
